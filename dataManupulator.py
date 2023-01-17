@@ -21,9 +21,9 @@ def csv_to_json(csvFilePath, jsonFilePath):
 		jsonf.write(jsonString)
 
 
-csvFilePath = r'data.csv'
-jsonFilePath = r'data.json'
-csv_to_json(csvFilePath, jsonFilePath)
+csvFilePath = r'song-corpus/songs.csv'
+jsonFilePath = r'song-corpus/songs.json'
+
 
 
 
@@ -34,6 +34,11 @@ def get_songs_data():
 
 
 def get_songs_list():
-    list_songs=[]
-    return list_songs
+	with open('song-corpus/songs.json') as f:
+		list_songs = json.loads(f.read())
+    	return list_songs
+
+
+if __name__ == "__main__":
+	csv_to_json(csvFilePath, jsonFilePath)
 
