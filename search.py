@@ -48,14 +48,14 @@ def intent_classifier(search_term):
     field_intent = ''
 
 
-    keyword_metaphor_meaning = ["Meaning", "meaning_of_metaphor", "metaphor_meaning"]
-    keyword_source = ["Source_domain", "source", "metaphor source_domain"]
-    keyword_target = ["Target_domain", "target", "metaphor target_domain"]
-    keyword_metaphor = ["Metaphor"]
+    keyword_metaphor_meaning = ["Metaphor", "meaning of metaphor", "metaphor meaning", "metaphor about", "metaphor related"]
+    keyword_source = ["Source","Source_domain", "metaphor_source_domain"]
+    keyword_target = ["Target", "Target_domain",  "metaphor_target_domain"]
+    # keyword_metaphor = ["Metaphor"]
     keyword_artist = ["Artist", "singer", "sing_by", "sung_by"]
     keyword_lyricist = ["Lyricist", "writer", "written_by"]
 
-    keyword_fields = [keyword_metaphor_meaning, keyword_source, keyword_target, keyword_metaphor, keyword_artist,
+    keyword_fields = [keyword_metaphor_meaning, keyword_source, keyword_target, keyword_artist,
                       keyword_lyricist]
 
     search_term = remove_stop_words(search_term)
@@ -69,7 +69,7 @@ def intent_classifier(search_term):
             documents.extend(keyword_list)
 
             max_val = max(check_similarity(documents))
-            if max_val > 0.9:
+            if max_val > 0.85:
                 select_type = 0
                 field_intent = keyword_list[0]
                 print("field intent: " + field_intent)
@@ -109,14 +109,15 @@ def search_text_multi_match(search_term, select_type, field_intent):
     meta_data = json.loads(f.read())
 
     data=[]
-    if field_intent=="Meaning":
+    if field_intent == "Metaphor":
+        field_intent = "Meaning"
         data = meta_data["meaning"]
-    elif field_intent == "Source_domain":
-        data = meta_data["source_domain"]
-    elif field_intent == "Target_domain":
-        data = meta_data["target_domain"]
-    elif field_intent == "Metaphor":
-        data = meta_data["metaphor"]
+    elif field_intent == "Source":
+        data = meta_data["source"]
+    elif field_intent == "Target":
+        data = meta_data["target"]
+    # elif field_intent == "Metaphor":
+    #     data = meta_data["metaphor"]
     elif field_intent == "Artist":
         data = meta_data["artist"]
     elif field_intent == "Lyricist":
@@ -128,7 +129,7 @@ def search_text_multi_match(search_term, select_type, field_intent):
     similarity_list = check_similarity(documents_meanings)
 
     max_val = max(similarity_list)
-    if max_val > 0.9:
+    if max_val > 0.90:
         loc = np.where(similarity_list == max_val)
         i = loc[0][0]
         query_term = data[i]  # if name is found, search for that to avoid spelling errors
@@ -146,13 +147,14 @@ def search_text_multi_match(search_term, select_type, field_intent):
     #         }
     #     },
     # })
+
     results = es.search(index='index-songs', doc_type='sinhala-songs', body={
         "size": 100,
         "query": {
             "multi_match": {
                 "query": query_term,
                 "type": "best_fields",
-                "fields": [ field_intent  ]
+                "fields": [field_intent]
             }
         },
     })
