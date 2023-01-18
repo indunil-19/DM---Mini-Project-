@@ -1,11 +1,9 @@
-from flask import flash, render_template, request, redirect, jsonify
+from flask import render_template, request
 from flask import Flask
 
 from search import search_query
 
 app = Flask(__name__)
-global_search = "dada"
-
 
 global_search = "songs"
 

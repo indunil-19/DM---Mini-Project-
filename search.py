@@ -20,7 +20,6 @@ def remove_stop_words(search_term):
     stop_words = set(stopwords.words('english'))
     word_tokens = word_tokenize(search_term)
     filtered_sentence = [w for w in word_tokens if not w.lower() in stop_words]
-
     # remove punctuation and possessive terms
     filtered_sentence = [w for w in filtered_sentence if not (w == "'s")]
     filtered_sentence = ' '.join(filtered_sentence).translate(str.maketrans('', '', string.punctuation))
@@ -48,12 +47,13 @@ def intent_classifier(search_term):
     result_word = ''
     field_intent = ''
 
-    keyword_metaphor_meaning = ["meaning", "meaning_of_metaphor", "metaphor_meaning"]
-    keyword_source = ["source_domain", "source", "metaphor source_domain"]
-    keyword_target = ["target_domain", "target", "metaphor target_domain"]
-    keyword_metaphor = ["metaphor"]
-    keyword_artist = ["artist", "singer", "sing by"]
-    keyword_lyricist = ["lyricist", "writer", "written by"]
+
+    keyword_metaphor_meaning = ["Meaning", "meaning_of_metaphor", "metaphor_meaning"]
+    keyword_source = ["Source_domain", "source", "metaphor source_domain"]
+    keyword_target = ["Target_domain", "target", "metaphor target_domain"]
+    keyword_metaphor = ["Metaphor"]
+    keyword_artist = ["Artist", "singer", "sing_by", "sung_by"]
+    keyword_lyricist = ["Lyricist", "writer", "written_by"]
 
     keyword_fields = [keyword_metaphor_meaning, keyword_source, keyword_target, keyword_metaphor, keyword_artist,
                       keyword_lyricist]
@@ -109,17 +109,17 @@ def search_text_multi_match(search_term, select_type, field_intent):
     meta_data = json.loads(f.read())
 
     data=[]
-    if field_intent=="meaning":
+    if field_intent=="Meaning":
         data = meta_data["meaning"]
-    elif field_intent == "source_domain":
+    elif field_intent == "Source_domain":
         data = meta_data["source_domain"]
-    elif field_intent == "target_domain":
+    elif field_intent == "Target_domain":
         data = meta_data["target_domain"]
-    elif field_intent == "metaphor":
+    elif field_intent == "Metaphor":
         data = meta_data["metaphor"]
-    elif field_intent == "artist":
+    elif field_intent == "Artist":
         data = meta_data["artist"]
-    elif field_intent == "lyricist":
+    elif field_intent == "Lyricist":
         data = meta_data["lyricist"]
 
     documents_meanings = [english_term]
@@ -134,18 +134,38 @@ def search_text_multi_match(search_term, select_type, field_intent):
         query_term = data[i]  # if name is found, search for that to avoid spelling errors
 
     print("Searched in index: ", query_term)
+    # results = es.search(index='index-songs', doc_type='sinhala-songs', body={
+    #     "size": 100,
+    #     "query": {
+    #         "multi_match": {
+    #             "query": query_term,
+    #             "type": "best_fields",
+    #             "fields": [
+    #                 "Title", "Title_en", "Artist", "Album", "Album_en", "Released year", "Lyricist",
+    #                 "Lyrics", "Metaphor", "Metaphor_en", "Meaning", "Source", "Target"]
+    #         }
+    #     },
+    # })
     results = es.search(index='index-songs', doc_type='sinhala-songs', body={
         "size": 100,
         "query": {
             "multi_match": {
                 "query": query_term,
                 "type": "best_fields",
-                "fields": [
-                    "Title", "Title_en", "Artist", "Album", "Album_en", "Released year", "Lyricist",
-                    "Lyrics", "Metaphor", "Metaphor_en", "Meaning", "Source", "Target"]
+                "fields": [ field_intent  ]
             }
         },
     })
+    # results = es.search(index='index-songs', doc_type='sinhala-songs', body={
+    #     "size": 100,
+    #     "query": {
+    #         "term": {
+    #             field_intent:{
+    #                 "value": query_term
+    #             }
+    #         }
+    #     },
+    # })
     print(query_term)
     list_songs, artists, lyricist, lyrics = post_processing_text(results)
     return list_songs, artists, lyricist, lyrics
@@ -201,15 +221,7 @@ def post_processing_text(results):
         lyrics = lyrics.replace('t', '')
         lyrics = lyrics.replace('\xa0', '')
         lyrics = lyrics.replace('n', ' ')
-        # lyrics = "<br>".join(lyrics.split("n"))
         lyrics = re.sub(r'(<br> )+', r'\1', lyrics)
-        # j = 0
-        # while True :
-        #     if lyrics[j] == '<' or lyrics[j] == '>' or lyrics[j] == 'b' or lyrics[j] == 'r' or lyrics[j] == ' ':
-        #         j += 1
-        #     else :
-        #         break
-        # lyrics = lyrics[j:]
         results['hits']['hits'][i]['_source']["Lyrics"] = lyrics
         list_songs.append(results['hits']['hits'][i]['_source'])
     # aggregations = results['aggregations']
